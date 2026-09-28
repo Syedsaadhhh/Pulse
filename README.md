@@ -28,4 +28,3 @@ Run `./run-tests.ps1`. It executes a self-checking Icarus testbench covering noi
 ## Provenance
 
 Started from the [Tiny Tapeout IHP Verilog template](https://github.com/TinyTapeout/ttihp-verilog-template), whose license is Apache-2.0. PulseTrust RTL, demo code, tests, and text were authored for this project. The prior-art sources in `RESEARCH.md` informed the problem framing; no third-party pulse-counter RTL was copied. The only local demo hardware is an existing laptop, used as the simulation host.
-
