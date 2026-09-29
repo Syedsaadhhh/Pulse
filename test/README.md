@@ -1,47 +1,17 @@
-# Sample testbench for a Tiny Tapeout project
+# PulseTrust verification
 
-This is a sample testbench for a Tiny Tapeout project. It uses [cocotb](https://docs.cocotb.org/en/stable/) to drive the DUT and check the outputs.
-See below to get started or for more information, check the [website](https://tinytapeout.com/hdl/testing/).
+The RTL self-check (`rtl_selfcheck.v`) and browser API integration test (`demo_api.test.js`) compile and execute `src/project.v`. The Cocotb suite in `test.py` uses a `SAMPLE_DIV=4` parameter override for fast sampling but otherwise exercises the same RTL. The actual Tiny Tapeout top defaults to `SAMPLE_DIV=50000`, which produces one filter sample per millisecond at the declared 50 MHz clock.
 
-## Setting up
-
-1. Edit [Makefile](Makefile) and modify `PROJECT_SOURCES` to point to your Verilog files.
-2. Edit [tb.v](tb.v) and replace `tt_um_example` with your module name.
-
-## How to run
-
-To run the RTL simulation:
+With Icarus, Yosys, Cocotb, Node.js, and `make` installed:
 
 ```sh
-make -B
+iverilog -g2005 -s rtl_selfcheck -o /tmp/pulsetrust-selfcheck.vvp src/project.v test/rtl_selfcheck.v
+vvp /tmp/pulsetrust-selfcheck.vvp
+yosys -Q -T -q -p 'read_verilog src/project.v; hierarchy -check -top tt_um_syedsaadhhh_pulsetrust; synth -top tt_um_syedsaadhhh_pulsetrust; check -assert'
+make -C test clean && make -C test
+node --test test/demo_api.test.js
 ```
 
-To run gatelevel simulation, first harden your project and copy `../runs/wokwi/results/final/verilog/gl/{your_module_name}.v` to `gate_level_netlist.v`.
+For a local smoke test of the **default** divider without hardening, run `make -C test clean && make -C test COMPILE_ARGS=-DPULSE_REAL_DIV COCOTB_TEST_MODULES=test_gl`. When the Tiny Tapeout workflow supplies a mapped gate-level netlist, `make -C test GATES=yes` selects the bounded `test_gl.py` smoke case. A clean RTL pass does not establish tile fit or mapped timing; inspect the separate GDS, precheck, and gate-level workflow results.
 
-Then run:
-
-```sh
-make -B GATES=yes
-```
-
-If you wish to save the waveform in VCD format instead of FST format, edit tb.v to use `$dumpfile("tb.vcd");` and then run:
-
-```sh
-make -B FST=
-```
-
-This will generate `tb.vcd` instead of `tb.fst`.
-
-## How to view the waveform file
-
-Using GTKWave
-
-```sh
-gtkwave tb.fst tb.gtkw
-```
-
-Using Surfer
-
-```sh
-surfer tb.fst
-```
+The generated waveform and `results.xml` are test artifacts, not project source. Do not claim a real sensor or fabricated chip from these simulations.

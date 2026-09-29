@@ -37,7 +37,13 @@ VERILOG_SOURCES += $(PWD)/tb.v
 TOPLEVEL = tb
 
 # List test modules to run, separated by commas and without the .py suffix:
+ifeq ($(GATES),yes)
+# The mapped netlist uses the real 50,000-clock divider, so run a bounded
+# gate-level smoke test rather than the accelerated RTL overflow sweep.
+COCOTB_TEST_MODULES = test_gl
+else
 COCOTB_TEST_MODULES = test
+endif
 
 # include cocotb's make rules to take care of the simulator setup
 include $(shell cocotb-config --makefiles)/Makefile.sim

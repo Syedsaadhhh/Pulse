@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#07121d">
-  <title>PulseTrust — Live chip proof</title>
+  <title>PulseTrust — Sensor response verification</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -17,39 +17,42 @@
     <main>
       <section class="hero">
         <div class="hero-copy">
-          <p class="eyebrow">A TINY CIRCUIT WITH A BIG QUESTION</p>
-          <h1>Did that pulse <em>really</em> happen?</h1>
-          <p class="lead">Noisy sensor wires can turn one event into several. PulseTrust filters short transients, counts valid edges, and raises a visible flag when expected events go missing.</p>
+          <p class="eyebrow">PULSE-OUTPUT SENSOR HEALTH · DIGITAL PROTOTYPE</p>
+          <h1>Did the machine <em>respond?</em></h1>
+          <p class="lead">When a controller expects flow, a sensor should send credible pulses. PulseTrust counts accepted edges in that operating window and reports too few events or a line held high for the whole window.</p>
           <div class="hero-actions"><button id="run" class="primary">Run this chip <span>↗</span></button><span class="hint">Change any control. Every run recompiles the Verilog.</span></div>
         </div>
         <div class="hero-result" aria-live="polite">
           <div class="result-top"><span>LAST MEASUREMENT WINDOW</span><span id="result-chip" class="result-chip">READY TO TEST</span></div>
           <div class="big-number"><span id="last-count">—</span><small>accepted<br>events</small></div>
           <div id="result-summary" class="result-summary">Choose a scenario and run the circuit.</div>
-          <div class="result-footer"><div><strong id="raw-count">—</strong><span>raw edges</span></div><div><strong id="rejected-count">—</strong><span>rejected</span></div><div><strong id="minimum-count">—</strong><span>required</span></div></div>
+          <div class="result-footer"><div><strong id="raw-count">—</strong><span>raw edges, whole trace</span></div><div><strong id="rejected-count">—</strong><span>suppressed, whole trace</span></div><div><strong id="minimum-count">—</strong><span>required, last window</span></div></div>
         </div>
       </section>
 
       <section class="workspace">
         <div class="controls panel">
           <div class="panel-head"><div><span class="eyebrow">01 / BUILD A SIGNAL</span><h2>Give it a real challenge</h2></div></div>
-          <label class="field"><span>Use case</span><select id="scenario"><option value="water">Water meter</option><option value="energy">Energy meter</option><option value="air">Particle counter</option></select></label>
-          <label class="field"><span>Real events <output id="events-value">5</output></span><input id="events" type="range" min="0" max="24" value="5"></label>
-          <label class="field"><span>Noise spikes <output id="glitches-value">8</output></span><input id="glitches" type="range" min="0" max="24" value="8"></label>
+          <label class="field"><span>Challenge</span><select id="scenario"><option value="noise">Short disturbances during flow</option><option value="clean">Clean operation</option><option value="missing">Missing response</option><option value="held">Line held high</option><option value="narrow">Real pulse missed by strong filter</option></select></label>
+          <label class="field"><span>Intended events <output id="events-value">5</output></span><input id="events" type="range" min="0" max="24" value="5"></label>
+          <label class="field"><span>Short transitions <output id="glitches-value">8</output></span><input id="glitches" type="range" min="0" max="24" value="8"></label>
           <label class="field"><span>Stable samples required <output id="filter-value">3</output></span><input id="filter" type="range" min="1" max="8" value="3"></label>
           <label class="field"><span>Minimum expected <output id="minimum-value">4</output></span><input id="minimum" type="range" min="0" max="24" value="4"></label>
           <div class="control-row"><label class="field compact"><span>Signal seed</span><input id="seed" type="number" min="1" max="999999" value="2026"></label><button id="randomize" class="secondary" title="Create a new input pattern">Shuffle signal</button></div>
           <button id="rerun" class="primary full">Compile &amp; simulate <span>→</span></button>
-          <p class="microcopy">The presets change only the input signal. The same chip design processes every use case.</p>
+          <p class="microcopy">At a 50 MHz host clock the chip's default divider gives one sample per 1 ms; the 1–8 sample setting gives a nominal 1–8 ms threshold. This simulator accelerates the divider to 4 cycles per sample. A real sensor's pulse widths still need measurement.</p>
+          <p id="scenario-note" class="microcopy">Controls define a generated signal, not measured sensor data.</p>
         </div>
 
         <div class="visual panel">
-          <div class="panel-head"><div><span class="eyebrow">02 / SEE THE DECISION</span><h2>One stream. Two truths.</h2></div><div id="run-id" class="run-id">NO RUN YET</div></div>
+          <div class="panel-head"><div><span class="eyebrow">02 / SEE THE DECISION</span><h2>Same signal, two counters</h2></div><div id="run-id" class="run-id">NO RUN YET</div></div>
           <div class="plot-toolbar"><div class="legend"><span><i class="key raw"></i> Raw input</span><span><i class="key filtered"></i> Filtered level</span><span><i class="key accepted"></i> Accepted event</span></div><select id="zoom" aria-label="Visible clock cycles"><option value="90">90 cycles</option><option value="150" selected>150 cycles</option><option value="240">240 cycles</option></select></div>
           <div class="plot-wrap"><canvas id="plot" aria-label="Circuit timing diagram"></canvas></div>
           <div class="scrub"><span>EARLIER</span><input id="position" type="range" min="0" max="0" value="0"><span>LATER</span></div>
-          <div class="flow"><div><span>01</span><strong>Synchronize</strong><small>two flip-flops</small></div><b>→</b><div><span>02</span><strong>Filter</strong><small>1–8 stable clocks</small></div><b>→</b><div><span>03</span><strong>Count &amp; audit</strong><small>8-bit saturation + flags</small></div></div>
+          <div class="flow"><div><span>01</span><strong>Synchronize</strong><small>two flip-flops</small></div><b>→</b><div><span>02</span><strong>Sample &amp; filter</strong><small>1–8 stable samples</small></div><b>→</b><div><span>03</span><strong>Count &amp; audit</strong><small>window flags</small></div></div>
+          <div class="comparison" id="comparison">Run a challenge to compare a plain raw-edge counter with PulseTrust over the whole generated trace. The large number above is the latest completed window.</div>
           <div id="interpretation" class="interpretation">A fresh waveform will appear after the first HDL run.</div>
+          <p class="microcopy">“Suppressed” can include genuine narrow events. The chip observes digital levels; it cannot identify the physical cause of a low count. Generated event labels are known only to this test harness.</p>
         </div>
       </section>
 

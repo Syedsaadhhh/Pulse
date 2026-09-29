@@ -36,9 +36,9 @@ class Pins:
 
     async def pulse(self, high=6, low=6):
         self.raw = 1
-        await self.clocks(high)
+        await self.clocks(high * 4)
         self.raw = 0
-        await self.clocks(low)
+        await self.clocks(low * 4)
 
     async def close_window(self):
         self.window = 1
@@ -71,9 +71,9 @@ async def rejects_bounce_and_counts_real_pulses(dut):
     p.filter_code = 2  # Three stable synchronized samples.
     p.minimum = 2
     p.raw = 1
-    await p.clocks(1)  # A one-clock spike must never count.
+    await p.clocks(4)  # One sample interval cannot meet a 3-sample filter.
     p.raw = 0
-    await p.clocks(6)
+    await p.clocks(24)
     assert p.count() == 0
     await p.pulse()
     await p.pulse()
@@ -156,3 +156,20 @@ async def window_tick_is_edge_sensitive(dut):
     p.window = 1
     await p.clocks(1)
     assert p.flag(5) == 1
+
+
+@cocotb.test()
+async def held_high_requires_whole_armed_window(dut):
+    p = await setup(dut)
+    p.filter_code = 0
+    p.raw = 1
+    await p.clocks(32)
+    await p.close_window()
+    assert p.flag(7) == 0
+    await p.clocks(32)
+    await p.close_window()
+    assert p.flag(7) == 1
+    p.raw = 0
+    await p.clocks(32)
+    await p.close_window()
+    assert p.flag(7) == 0

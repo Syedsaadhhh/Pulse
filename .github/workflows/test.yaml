@@ -31,6 +31,9 @@ jobs:
           # make will return success even if the test fails, so check for failure in the results.xml
           ! grep failure results.xml
 
+      - name: Exercise the live RTL demo API
+        run: node --test test/demo_api.test.js
+
       - name: Test Summary
         uses: test-summary/action@v2.4
         with:

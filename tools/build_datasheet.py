@@ -15,6 +15,9 @@ OUT = ROOT / "output" / "pdf" / "PulseTrust-datasheet.pdf"
 OUT.parent.mkdir(parents=True, exist_ok=True)
 FONT = Path("C:/Windows/Fonts/arial.ttf")
 BOLD = Path("C:/Windows/Fonts/arialbd.ttf")
+if not FONT.exists():
+    FONT = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
+    BOLD = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
 pdfmetrics.registerFont(TTFont("ArialLocal", str(FONT)))
 pdfmetrics.registerFont(TTFont("ArialLocalBold", str(BOLD)))
 
@@ -53,10 +56,10 @@ C.setFont("ArialLocalBold", 26)
 C.drawString(42, H-55, "PulseTrust")
 C.setFillColor(colors.white)
 C.setFont("ArialLocal", 10)
-C.drawString(43, H-78, "A digital pulse integrity block for sensor designers")
+C.drawString(43, H-78, "A digital sensor-response monitor for integrators")
 C.setFont("ArialLocalBold", 8)
 C.drawRightString(W-42, H-39, "PAK TROOPERS  |  ROCKETATHON FABLESS")
-C.drawRightString(W-42, H-78, "28 SEP 2026  |  PRE-EVENT PROTOTYPE")
+C.drawRightString(W-42, H-78, "29 SEP 2026  |  RTL CANDIDATE")
 
 y = H-121
 C.setFillColor(light)
@@ -64,17 +67,17 @@ C.roundRect(42, y-75, W-84, 75, 8, stroke=0, fill=1)
 C.setFillColor(teal)
 C.setFont("ArialLocalBold", 9)
 C.drawString(55, y-18, "THE PROBLEM")
-para("Noise and switch bounce can make a pulse-output sensor report events that never happened. "
-     "A low event count during an expected operating window can also signal a process fault. "
-     "PulseTrust gives an integrator a compact, auditable digital front end.", 55, y-25, W-110, body)
+para("When a controller commands a machine to run, a pulse-output sensor should send credible events. "
+     "Short transitions may inflate a raw count; too few accepted events or a line held high "
+     "can warrant review. These observations do not diagnose the physical cause.", 55, y-25, W-110, body)
 y -= 96
 
 y = heading("What the circuit does", 42, y)
-y = para("<b>Synchronize</b> a conditioned logic-level input with two flip-flops; "
-         "<b>filter</b> transitions until 1-8 stable clock samples arrive; "
-         "<b>count</b> accepted rising edges up to 255; then "
-         "<b>snapshot</b> each host-defined measurement window with glitch, low-count, "
-         "overflow and ready flags.", 42, y-6, W-84)
+y = para("<b>Synchronize</b> a conditioned digital input; <b>sample</b> it with a clock enable; "
+         "<b>filter</b> transitions using 1-8 consecutive stable samples; <b>count</b> accepted "
+         "rising edges up to 255; <b>snapshot</b> each host-defined operating window with "
+         "low-count, held-high, incomplete-transition and overflow observations. "
+         "At 50 MHz, the default divider gives one sample per millisecond.", 42, y-6, W-84)
 y -= 22
 
 y = heading("Pin contract", 42, y)
@@ -85,7 +88,7 @@ table = [
     ("ui[7]", "Read live count or last completed count"),
     ("uio_in[7:0]", "Minimum expected pulses in the closing window"),
     ("uo_out[7:0]", "Selected saturating 8-bit count"),
-    ("uio_out[0:6]", "Filtered level, accepted strobe, glitch, low-count, overflow, ready, enable"),
+    ("uio_out[0:7]", "Filtered, accepted, incomplete, low, overflow, ready, enable, held-high"),
 ]
 row_h = 19
 top = y-7
@@ -108,19 +111,19 @@ for i, (pin, meaning) in enumerate(table):
 y = top-row_h*(len(table)+1)-22
 
 y = heading("Live proof", 42, y)
-y = para("A seeded synthetic input with <b>5 intended events and 8 short spikes</b> produced "
-         "13 raw edges. The actual Verilog simulation accepted 5 and rejected 8. "
-         "A self-checking Icarus test passes noise rejection, valid counting, window snapshots, "
-         "low-count alerts and overflow. Yosys synthesis reports 156 generic cells with no structural errors; "
-         "these are not mapped area or timing results.", 42, y-6, W-84)
+y = para("Five generated intended events and eight short transitions produce <b>13 raw edges</b>. "
+         "The actual RTL accepts five with a three-sample filter. The browser also demonstrates "
+         "missing response, whole-window high input, and genuine pulses missed by strong filtering. "
+         "The demo accelerates the divider to four clock cycles; it is not a sensor measurement. "
+         "Local Icarus self-check and demo API tests pass.", 42, y-6, W-84)
 y -= 20
 
 y = heading("Engineering limits", 42, y)
-y = para("A filter can reject narrow valid pulses; the fastest setting can accept noise. "
-         "The count saturates at 255. Synchronization reduces, but cannot eliminate, metastability risk. "
-         "This block needs an external analog/protection stage, clock, power and host control. "
-         "No physical silicon or certified measurement is claimed. <b>1x1 tile fit and 50 MHz "
-         "remain targets until a LibreLane layout and timing report passes.</b>", 42, y-6, W-84)
+y = para("Filtering can lose genuine narrow pulses; the fastest setting can accept short changes. "
+         "The count saturates at 255, and an incomplete-transition flag cannot catch changes "
+         "entirely between sample ticks. A physical system needs input protection, clock, power "
+         "and host control. <b>1x1 tile fit and 50 MHz remain targets until actual LibreLane "
+         "layout and timing reports pass.</b> No silicon or certified measurement is claimed.", 42, y-6, W-84)
 
 y -= 32
 C.setFillColor(teal)
@@ -144,7 +147,7 @@ rule(75)
 C.setFillColor(muted)
 C.setFont("ArialLocal", 7.4)
 C.drawString(42, 61, "Source: original src/project.v | Reproduce: run-tests.ps1 and run-demo.ps1")
-C.drawString(42, 49, "Problem evidence: Rockwell 1746-UM002B-EN-P; prior art: Espressif PCNT documentation")
+C.drawString(42, 49, "Prior art: Espressif PCNT; industrial filter context: Rockwell counter manual")
 C.setFont("ArialLocalBold", 7.4)
 C.drawRightString(W-42, 49, "1 / 1")
 if y < 84:

@@ -23,7 +23,14 @@ module tb ();
   wire [7:0] uio_out;
   wire [7:0] uio_oe;
 
+`ifdef GL_TEST
   tt_um_syedsaadhhh_pulsetrust user_project (
+`elsif PULSE_REAL_DIV
+  tt_um_syedsaadhhh_pulsetrust user_project (
+`else
+  // Accelerated sampling for RTL tests; the shipped top defaults to 50,000.
+  tt_um_syedsaadhhh_pulsetrust #(.SAMPLE_DIV(4)) user_project (
+`endif
       .ui_in  (ui_in),    // Dedicated inputs
       .uo_out (uo_out),   // Dedicated outputs
       .uio_in (uio_in),   // IOs: Input path

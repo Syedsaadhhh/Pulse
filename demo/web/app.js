@@ -4,7 +4,8 @@ let latest = null;
 let running = false;
 
 function values() {
-  return Object.fromEntries(controls.map(id => [id, Number($(id).value)]));
+  return { ...Object.fromEntries(controls.map(id => [id, Number($(id).value)])),
+    scenario: $('scenario').value };
 }
 
 function refreshLabels() {
@@ -19,6 +20,7 @@ function markDirty() {
   $('result-chip').textContent = 'PREVIOUS RUN';
   $('result-chip').className = 'result-chip';
   $('result-summary').textContent = 'Press Compile & simulate to test these settings in the real Verilog.';
+  $('comparison').textContent = 'Settings changed; rerun for a comparison of this signal.';
 }
 
 function status(text, kind) {
@@ -29,11 +31,19 @@ function status(text, kind) {
 
 function setPreset(name) {
   const preset = {
-    water: { events: 5, glitches: 8, filter: 3, minimum: 4 },
-    energy: { events: 9, glitches: 4, filter: 2, minimum: 7 },
-    air: { events: 12, glitches: 11, filter: 4, minimum: 10 },
+    clean: { events: 5, glitches: 0, filter: 3, minimum: 4 },
+    noise: { events: 5, glitches: 8, filter: 3, minimum: 4 },
+    missing: { events: 0, glitches: 0, filter: 3, minimum: 1 },
+    held: { events: 1, glitches: 0, filter: 3, minimum: 1 },
+    narrow: { events: 3, glitches: 0, filter: 8, minimum: 3 },
   }[name];
   for (const [key, value] of Object.entries(preset)) $(key).value = value;
+  const fixed = name === 'held';
+  $('events').disabled = fixed;
+  $('glitches').disabled = fixed;
+  $('scenario-note').textContent = fixed
+    ? 'This case fixes one first-window rise and a full following high window. The event and short-transition sliders do not apply.'
+    : 'Controls define a generated signal, not measured sensor data.';
   refreshLabels();
 }
 
@@ -57,20 +67,27 @@ async function runChip() {
     status('VERIFIED FROM RTL', 'ok');
     $('last-count').textContent = r.lastCount;
     $('raw-count').textContent = r.rawEdges;
-    $('rejected-count').textContent = r.rejected;
+    $('rejected-count').textContent = r.suppressedRawEdges;
     $('minimum-count').textContent = data.options.minimum;
-    $('run-id').textContent = `${data.trace.length} CLOCKS · SEED ${data.options.seed}`;
-    const alert = r.underMinimum || r.overflow;
+    $('run-id').textContent = `${data.trace.length} SIM CLOCKS · SEED ${data.options.seed}`;
+    const alert = r.underMinimum || r.overflow || r.heldHigh;
     $('result-chip').textContent = alert ? 'REVIEW REQUIRED' : 'WINDOW ACCEPTED';
     $('result-chip').className = `result-chip${alert ? ' alert' : ''}`;
-    $('result-summary').textContent = r.underMinimum
-      ? `Only ${r.lastCount} valid events arrived; the required minimum is ${data.options.minimum}.`
-      : r.overflow
-        ? 'The 8-bit count saturated. Readings above 255 cannot be reported precisely.'
-        : `${r.rejected} raw edge${r.rejected === 1 ? ' was' : 's were'} rejected before the count was recorded.`;
-    $('interpretation').textContent = r.accepted === r.intendedEvents
-      ? `The HDL accepted all ${r.intendedEvents} intended events and rejected ${r.rejected} short transients in this generated test signal.`
-      : `The HDL accepted ${r.accepted} edges for ${r.intendedEvents} intended events. This filter setting has a measurable tradeoff; change the stable-sample control and run again.`;
+    const reasons = [];
+    if (r.underMinimum) reasons.push(`completed count ${r.lastCount} is below minimum ${data.options.minimum}`);
+    if (r.heldHigh) reasons.push('the filtered line stayed high through a whole active window');
+    if (r.overflow) reasons.push('the 8-bit counter saturated at 255');
+    $('result-summary').textContent = reasons.length
+      ? `Review: ${reasons.join('; ')}.`
+      : `Completed window met the configured minimum of ${data.options.minimum}.`;
+    $('comparison').textContent = `Whole generated trace — plain raw-edge baseline: ${r.rawEdges} · HDL accepted: ${r.accepted} · ` +
+      `Generator labels: ${r.intendedEvents} intended, ${r.acceptedIntended} accepted intended, ` +
+      `${r.acceptedDisturbances} accepted short transitions, ${r.missedIntended} missed intended.`;
+    $('interpretation').textContent = r.missedIntended
+      ? `A real event was too narrow for this filter: ${r.missedIntended} intended pulse(s) were missed. More filtering is not always better.`
+      : r.acceptedDisturbances
+        ? `${r.acceptedDisturbances} generated short transition(s) entered the count. A permissive filter can overcount.`
+        : `In this generated test, the HDL accepted ${r.acceptedIntended} intended event(s). A low count or held-high observation does not diagnose the physical cause.`;
     $('position').max = Math.max(0, data.trace.length - Number($('zoom').value));
     $('position').value = 0;
     draw();
@@ -81,6 +98,7 @@ async function runChip() {
     $('result-summary').textContent = error.message;
     for (const id of ['last-count', 'raw-count', 'rejected-count', 'minimum-count']) $(id).textContent = '—';
     $('run-id').textContent = 'NO VERIFIED RUN';
+    $('comparison').textContent = 'No comparison is available without a completed RTL simulation.';
     $('interpretation').textContent = 'The dashboard shows no substitute numbers when the HDL engine is unavailable. Check the local simulator path and retry.';
     draw();
   } finally {
@@ -129,8 +147,8 @@ function draw() {
     ctx.fillText(String(i), x + 3, top);
     ctx.strokeStyle = '#143040'; ctx.beginPath(); ctx.moveTo(x, 38); ctx.lineTo(x, h - 20); ctx.stroke();
   }
-  if (latest.boundary >= start && latest.boundary < end) {
-    const x = xx(latest.boundary);
+  for (const boundary of latest.boundaries) if (boundary >= start && boundary < end) {
+    const x = xx(boundary);
     ctx.setLineDash([5, 4]); ctx.strokeStyle = '#ffce7a';
     ctx.beginPath(); ctx.moveTo(x, 38); ctx.lineTo(x, h - 19); ctx.stroke();
     ctx.setLineDash([]); ctx.fillStyle = '#ffce7a'; ctx.fillText('WINDOW CLOSE', Math.min(x + 5, w - 119), 45);
