@@ -14,3 +14,5 @@ if ($LASTEXITCODE -ne 0) { throw 'RTL self-check failed' }
 & yosys -Q -T -q -p "read_verilog src/project.v; hierarchy -check -top tt_um_syedsaadhhh_pulsetrust; synth -top tt_um_syedsaadhhh_pulsetrust; check -assert"
 if ($LASTEXITCODE -ne 0) { throw 'Yosys synthesis check failed' }
 Write-Host 'PASS Yosys synthesis and structural checks'
+& node --test (Join-Path $PSScriptRoot 'test\demo_api.test.js')
+if ($LASTEXITCODE -ne 0) { throw 'Live RTL demo API test failed' }
