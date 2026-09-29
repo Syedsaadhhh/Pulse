@@ -1,8 +1,8 @@
 # PulseTrust — digital sensor pulse integrity IP
 
-**Revision:** pre-event prototype, 28 September 2026  
-**Interface:** Tiny Tapeout IHP Verilog template, 8 input / 8 output / 8 bidirectional pins  
-**Target:** 1×1 tile and 50 MHz *requested in metadata; physical fit and timing unverified*
+- **Revision:** build-day digital prototype, 29 September 2026
+- **Interface:** Tiny Tapeout IHP Verilog template, 8 input / 8 output / 8 bidirectional pins
+- **Target:** 1×1 tile and 50 MHz. The Tiny Tapeout GDS and precheck jobs passed; the reported slow-corner setup slack is +10.95 ns at the 20 ns clock constraint.
 
 ## Function
 
@@ -24,6 +24,6 @@ All `uio` pins are driven as outputs. A pulse accepted on the same clock as a bo
 
 ## Demonstrated behavior and limits
 
-Icarus Verilog self-check passes glitch rejection, valid count, snapshot, minimum alert, and saturation. Yosys reports 156 generic cells and no structural problems; this is **not** mapped area or timing. The default interactive signal has 5 intended events plus 8 short spikes: the HDL reports 13 raw edges, 5 accepted, 8 rejected. Input pulses too short for the selected filter can be lost; at the 1-sample setting, short noise can count. The maximum reportable count is 255. The synchronizer reduces but cannot eliminate metastability risk. A physical product also needs a suitable input front end, clock, power, host control, and application-specific validation. No fabricated chip, metrology accuracy, or safety certification is claimed.
+Icarus Verilog self-check passes glitch rejection, valid count, snapshot, minimum alert, and saturation. Five Cocotb tests pass in GitHub Actions, including the gate-level test job. The completed [Tiny Tapeout physical-design workflow](https://github.com/Syedsaadhhh/Pulse/actions/runs/36459089954) reports a 202.08 × 154.98 µm die, 284 mapped standard cells, 14.76% standard-cell utilization, and zero final routing DRC, Magic DRC, LVS, and antenna violations. The 1×1 precheck passed. These are tool-flow results, not fabricated-silicon measurements. The default interactive signal has 5 intended events plus 8 short spikes: the HDL reports 13 raw edges, 5 accepted, 8 rejected. Input pulses too short for the selected filter can be lost; at the 1-sample setting, short noise can count. At 50 MHz, the 1–8-sample range is only about 20–160 ns, so a mechanical reed switch needs a slower supplied clock or another design revision. The maximum reportable count is 255. The synchronizer reduces but cannot eliminate metastability risk. A physical product also needs a suitable input front end, clock, power, host control, and application-specific validation. No fabricated chip, metrology accuracy, or safety certification is claimed.
 
-**Reproduce:** `./run-tests.ps1` and `./run-demo.ps1` on the prepared laptop. See [detailed documentation](docs/info.md) and [provenance](PROVENANCE.md).
+**Reproduce:** `./run-tests.ps1`, `./run-demo.ps1`, and `python tools/extract_layout.py` on the prepared laptop. The live chip explorer is at `/chip`. See [detailed documentation](docs/info.md) and [provenance](PROVENANCE.md).

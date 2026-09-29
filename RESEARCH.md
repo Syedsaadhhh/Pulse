@@ -10,7 +10,11 @@ The [organizer's current track guide](https://pk2047.therocketguy.space/rocketat
 
 **Potential B2B integrator:** a meter, sensor gateway, or industrial control board designer who needs a reusable front-end digital block with a simple pin contract and auditable event count. This is an IP-block concept, not evidence of a paying customer. We have no interviews, procurement data, or comparative silicon benchmark yet.
 
+This is a real interface category: [Sensus sells reed-switch pulsers for water meters](https://www.sensus-international.com/en/products/rd-reed-pulser), and [Schneider documents energy-meter pulse outputs into external counters and data loggers](https://www.se.com/us/en/faqs/FA324270/). Those examples establish a possible integration context, not a customer endorsement of PulseTrust.
+
 **Why this combination:** configurable stable-sample filtering, a windowed count, explicit rejected-transition evidence, a minimum-event alert, and saturation reporting make failure cases observable. Individual pulse filters and counters already exist, so we claim a useful integrated teaching/prototyping block and demonstrable workflow, not invention of glitch filtering.
+
+**Timing caveat:** the filter is measured in clock samples, not milliseconds. At the 50 MHz metadata target, 1-8 samples span 20-160 ns; that alone does not debounce a mechanical water-meter reed switch. A host would have to drive the block with an application-appropriate slower clock or a future revision would need a prescaler. The dashboard's clock cycles are synthetic and are not a calibrated sensor trace. Conversely, too slow a clock can miss faster legitimate pulses. Any water/energy deployment needs a measured pulse-width and bounce envelope before choosing this IP block.
 
 ## Alternatives considered
 
@@ -30,8 +34,9 @@ The [Tiny Tapeout IHP Verilog template](https://github.com/TinyTapeout/ttihp-ver
 - Original RTL and pin-level documentation exist.
 - Self-checking Icarus Verilog test and Yosys structural synthesis pass locally.
 - The browser interface compiles and executes the RTL on each run, then renders the returned cycle-by-cycle trace. The water, energy, and particle use cases are input presets, not three different hardware designs.
+- The generator holds a seeded raw waveform constant as the filter changes. For the default seed, 13 raw edges produce 13 accepted edges at filter 1, 5 at filter 3, and 3 at filter 8. This exposes both noise leakage and lost legitimate pulses with a real HDL run.
 - A 1×1 tile and 50 MHz appear in `info.yaml` as **targets only**. No mapped area, static timing, DRC, or GDS report exists yet. Tiny Tapeout's [template workflow](https://github.com/TinyTapeout/ttihp-verilog-template) runs LibreLane in GitHub Actions after publication to a team repository.
-- Cocotb test cases are written but local Windows execution fails while loading the simulator DLL under Python 3.12 and 3.13. GitHub Actions remains the intended environment for those tests. Do not say they pass until a CI result exists.
+- All five Cocotb test cases passed in the [GitHub Actions test run](https://github.com/Syedsaadhhh/Pulse/actions/runs/36459089941). Local Windows execution still fails while loading the simulator DLL under Python 3.12 and 3.13; that is a host toolchain issue, not a failed CI test.
 
 ## Remaining slices for tomorrow, 9:00–18:00
 

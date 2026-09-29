@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: pulsetrust-demo
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    autoDeploy: true
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /

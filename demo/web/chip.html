@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07121d">
+  <title>Explore the chip · PulseTrust</title>
+  <link rel="stylesheet" href="/chip.css">
+</head>
+<body>
+  <div class="page">
+    <header class="site-header">
+      <a class="identity" href="/" aria-label="PulseTrust home"><span class="mark">PT</span><span>PulseTrust<small>Pak Troopers</small></span></a>
+      <nav aria-label="Main navigation"><a href="/">Live lab</a><a href="/chip" aria-current="page">Explore the chip</a></nav>
+      <span id="engine-status" class="engine-status">Loading layout</span>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div>
+          <h1>See where a pulse earns your trust.</h1>
+          <p>Orbit the placed and routed design, inspect real cells, then challenge the Verilog with a noisy signal. The physical view comes from our Tiny Tapeout layout files.</p>
+        </div>
+        <div class="intro-action"><button id="challenge" class="button button-primary">Inject noise into the chip <span aria-hidden="true">→</span></button><small>Runs the real RTL simulator</small></div>
+      </section>
+
+      <section class="explorer" aria-label="Interactive chip explorer">
+        <div class="stage">
+          <div class="stage-top">
+            <div class="view-tabs" role="tablist" aria-label="Explorer view"><button id="tab-layout" class="view-tab active" role="tab" aria-selected="true" aria-controls="layout-panel">Placed &amp; routed</button><button id="tab-logic" class="view-tab" role="tab" aria-selected="false" aria-controls="logic-panel">Logic tour</button><button id="tab-gds" class="view-tab" role="tab" aria-selected="false" aria-controls="gds-panel">GDS evidence</button></div>
+            <button id="reset-view" class="quiet-button">Reset view</button>
+          </div>
+          <div id="layout-panel" class="stage-panel" role="tabpanel" aria-labelledby="tab-layout">
+            <canvas id="chip-canvas" aria-label="Interactive 3D view of PulseTrust's routed chip layout. Drag to orbit, scroll to zoom, or select cells from the list." tabindex="0"></canvas>
+            <div class="stage-instruction">Drag to orbit · Scroll or pinch to zoom · Click a cell to inspect</div>
+            <div class="stage-badge">Actual X/Y placement · Illustrative height</div>
+            <div id="chip-tooltip" class="tooltip" role="status" hidden></div>
+          </div>
+          <div id="logic-panel" class="stage-panel hidden" role="tabpanel" aria-labelledby="tab-logic">
+            <div class="logic-head"><strong>RTL signal path</strong><span>Conceptual diagram · no claimed placement mapping</span></div>
+            <div id="logic-flow" class="logic-flow"></div>
+            <div class="logic-foot">Select a function to see its RTL signals and what the current simulation measured.</div>
+          </div>
+          <div id="gds-panel" class="stage-panel hidden" role="tabpanel" aria-labelledby="tab-gds">
+            <div class="gds-frame"><img id="gds-image" src="/layout/gds-render.png" alt="Actual PulseTrust GDS render from the Tiny Tapeout physical design workflow"></div>
+            <p class="gds-caption">Original GDS render from the completed LibreLane run. Pan and zoom are available in the 3D placed and routed view.</p>
+          </div>
+          <div class="stage-bottom"><span id="geometry-status">Reading design geometry…</span><label class="routes-toggle"><input id="show-routes" type="checkbox" checked> Show routed nets</label></div>
+        </div>
+
+        <aside class="inspector" aria-label="Chip inspector">
+          <div class="inspector-head"><span class="inspector-label">INSPECTOR</span><span id="inspector-kind">DESIGN</span></div>
+          <div id="inspector-content" class="inspector-content"><h2>Click into the silicon plan.</h2><p>Hover or select a placed cell to read its exact instance, IHP library type, position, orientation and connected nets.</p></div>
+          <div class="search-box"><label for="cell-search">Find a real cell</label><input id="cell-search" type="search" placeholder="Instance or library type" autocomplete="off"><div id="cell-results" class="cell-results" role="listbox" aria-label="Matching cells"></div></div>
+          <div class="provenance"><strong>What is real here?</strong><p>Cell positions, sizes, pins and routes are extracted from DEF and IHP LEF data. The vertical separation, colors and light are visual aids. This is a verified layout preview, not fabricated silicon.</p></div>
+        </aside>
+      </section>
+
+      <section id="challenge-lab" class="lab" aria-label="Live RTL challenge">
+        <div class="lab-heading"><div><h2>Challenge the real circuit.</h2><p>Change the signal, keep the seed, and watch the same RTL make a different decision. Every run compiles and executes <code>src/project.v</code>.</p></div><div id="run-status" class="run-status">Awaiting run</div></div>
+        <div class="lab-grid">
+          <div class="lab-controls">
+            <label>Use case<select id="scenario"><option value="water">Water meter</option><option value="energy">Energy meter</option><option value="air">Particle counter</option></select></label>
+            <label>Intended events <output id="events-output">5</output><input id="events" type="range" min="0" max="24" value="5"></label>
+            <label>Noise spikes <output id="glitches-output">8</output><input id="glitches" type="range" min="0" max="24" value="8"></label>
+            <label>Stable samples <output id="filter-output">3</output><input id="filter" type="range" min="1" max="8" value="3"></label>
+            <label>Minimum expected <output id="minimum-output">4</output><input id="minimum" type="range" min="0" max="24" value="4"></label>
+            <label>Signal seed<input id="seed" type="number" min="1" max="999999" value="2026"></label>
+            <div class="lab-actions"><button id="run-chip" class="button button-primary">Compile &amp; run RTL</button><button id="shuffle" class="button button-secondary">New signal</button></div>
+            <p class="timing-note">At 50 MHz, 1–8 samples cover about 20–160 ns. Mechanical contact bounce needs a slower clock or a future prescaler.</p>
+          </div>
+          <div class="lab-readout">
+            <div class="result-line"><div><span>Accepted in last window</span><strong id="accepted-count">—</strong></div><div><span>Raw edges</span><strong id="raw-count">—</strong></div><div><span>Rejected</span><strong id="rejected-count">—</strong></div></div>
+            <p id="result-message" class="result-message" aria-live="polite">Run the RTL to see what the chip accepts.</p>
+            <div class="wave-head"><strong>Input versus decision</strong><span id="wave-meta">No trace yet</span></div>
+            <canvas id="wave-canvas" aria-label="Timing trace from Icarus Verilog"></canvas>
+            <div class="wave-legend"><span><i class="raw"></i> Raw input</span><span><i class="filtered"></i> Filtered level</span><span><i class="accepted"></i> Accepted edge</span></div>
+            <div class="comparison"><span>Hold the signal seed constant. Change only stable samples to test the tradeoff.</span><button id="compare" class="button button-secondary">Compare 1, 3 and 8 samples</button></div>
+            <div id="compare-results" class="compare-results" aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="evidence-strip" aria-label="Physical design evidence"><div><span>Die</span><strong id="die-size">—</strong></div><div><span>Standard cells</span><strong id="cell-count">—</strong></div><div><span>Utilization</span><strong id="utilization">—</strong></div><div><span>Final DRC / LVS</span><strong id="physical-checks">—</strong></div><a id="workflow-link" href="https://github.com/Syedsaadhhh/Pulse/actions/runs/36459089954" target="_blank" rel="noreferrer">Inspect CI evidence ↗</a></section>
+    </main>
+    <footer>PulseTrust · Fabless digital sensor-input IP · Layout geometry and simulation are separate verified artifacts</footer>
+  </div>
+  <script src="/chip.js" defer></script>
+</body>
+</html>

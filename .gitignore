@@ -15,3 +15,7 @@ sim_build/
 sim_build_cocotb/
 demo/check.vvp
 tmp/
+node_modules/
+evidence/GDS_logs/
+evidence/gds_render/
+evidence/*.zip

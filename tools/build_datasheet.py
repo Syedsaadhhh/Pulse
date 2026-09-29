@@ -56,7 +56,7 @@ C.setFont("ArialLocal", 10)
 C.drawString(43, H-78, "A digital pulse integrity block for sensor designers")
 C.setFont("ArialLocalBold", 8)
 C.drawRightString(W-42, H-39, "PAK TROOPERS  |  ROCKETATHON FABLESS")
-C.drawRightString(W-42, H-78, "28 SEP 2026  |  PRE-EVENT PROTOTYPE")
+C.drawRightString(W-42, H-78, "29 SEP 2026  |  BUILD-DAY PROTOTYPE")
 
 y = H-121
 C.setFillColor(light)
@@ -64,7 +64,7 @@ C.roundRect(42, y-75, W-84, 75, 8, stroke=0, fill=1)
 C.setFillColor(teal)
 C.setFont("ArialLocalBold", 9)
 C.drawString(55, y-18, "THE PROBLEM")
-para("Noise and switch bounce can make a pulse-output sensor report events that never happened. "
+para("Short electrical transients can make a pulse-output sensor report events that never happened. "
      "A low event count during an expected operating window can also signal a process fault. "
      "PulseTrust gives an integrator a compact, auditable digital front end.", 55, y-25, W-110, body)
 y -= 96
@@ -111,16 +111,21 @@ y = heading("Live proof", 42, y)
 y = para("A seeded synthetic input with <b>5 intended events and 8 short spikes</b> produced "
          "13 raw edges. The actual Verilog simulation accepted 5 and rejected 8. "
          "A self-checking Icarus test passes noise rejection, valid counting, window snapshots, "
-         "low-count alerts and overflow. Yosys synthesis reports 156 generic cells with no structural errors; "
-         "these are not mapped area or timing results.", 42, y-6, W-84)
+         "low-count alerts and overflow; five Cocotb tests pass in GitHub Actions, "
+         "including gate-level tests. The Tiny Tapeout GDS and 1x1 precheck jobs passed: "
+         "284 mapped standard cells, 14.76% utilization, zero final route DRC and LVS errors. "
+         "The timed flow reports +10.95 ns slow-corner setup slack at a 20 ns constraint.",
+         42, y-6, W-84)
 y -= 20
 
 y = heading("Engineering limits", 42, y)
 y = para("A filter can reject narrow valid pulses; the fastest setting can accept noise. "
-         "The count saturates at 255. Synchronization reduces, but cannot eliminate, metastability risk. "
-         "This block needs an external analog/protection stage, clock, power and host control. "
-         "No physical silicon or certified measurement is claimed. <b>1x1 tile fit and 50 MHz "
-         "remain targets until a LibreLane layout and timing report passes.</b>", 42, y-6, W-84)
+         "At 50 MHz, 1-8 samples cover only about 20-160 ns: a mechanical reed switch would need "
+         "a slower supplied clock or a prescaler. The count saturates at 255. Synchronization "
+         "reduces, but cannot eliminate, metastability risk. An input protection stage and host "
+         "control are external. The physical metrics are tool-flow evidence, not measured silicon. "
+         "No fabricated chip or certified measurement is claimed.",
+         42, y-6, W-84)
 
 y -= 32
 C.setFillColor(teal)
@@ -143,7 +148,7 @@ for index, (number, label) in enumerate(labels):
 rule(75)
 C.setFillColor(muted)
 C.setFont("ArialLocal", 7.4)
-C.drawString(42, 61, "Source: original src/project.v | Reproduce: run-tests.ps1 and run-demo.ps1")
+C.drawString(42, 61, "Source: src/project.v + routed DEF | Reproduce: run-tests.ps1 and run-demo.ps1")
 C.drawString(42, 49, "Problem evidence: Rockwell 1746-UM002B-EN-P; prior art: Espressif PCNT documentation")
 C.setFont("ArialLocalBold", 7.4)
 C.drawRightString(W-42, 49, "1 / 1")

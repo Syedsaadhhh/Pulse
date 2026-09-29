@@ -33,4 +33,6 @@ Set a filter and minimum count, feed glitches and clean pulses, then compare the
 
 The filter trades noise rejection for latency and may reject narrow genuine pulses. The clock and sample setting determine minimum accepted width. The 8-bit count saturates at 255. The two-stage synchronizer reduces but does not eliminate metastability risk. The chip cannot identify the physical cause of a bad pulse. Timing, tile fit, and physical-design claims must come from actual LibreLane reports.
 
+The `clock_hz` metadata is a proposed maximum design target, not the required operating clock for every sensor. At 50 MHz, the 1–8-sample setting represents only about 20–160 ns of stability. Mechanical reed-switch bounce can require a much slower sampling clock or an added prescaler; no water-meter debounce performance is claimed at 50 MHz. The generated demo trace uses clock cycles, not measured milliseconds.
+
 No hardware is needed for RTL simulation. Physical deployment requires a conditioned logic-level sensor signal, clock, power, and host control. None is claimed for the Rocketathon demonstration.

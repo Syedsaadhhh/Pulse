@@ -64,7 +64,7 @@ async function runChip() {
     $('result-chip').textContent = alert ? 'REVIEW REQUIRED' : 'WINDOW ACCEPTED';
     $('result-chip').className = `result-chip${alert ? ' alert' : ''}`;
     $('result-summary').textContent = r.underMinimum
-      ? `Only ${r.lastCount} valid events arrived; the required minimum is ${data.options.minimum}.`
+      ? `Only ${r.lastCount} edges passed this filter; the required minimum is ${data.options.minimum}.`
       : r.overflow
         ? 'The 8-bit count saturated. Readings above 255 cannot be reported precisely.'
         : `${r.rejected} raw edge${r.rejected === 1 ? ' was' : 's were'} rejected before the count was recorded.`;

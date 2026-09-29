@@ -11,6 +11,7 @@ const { spawn } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
 const web = path.join(__dirname, 'web');
 const port = Number(process.env.PORT || 4173);
+const host = process.env.HOST || '127.0.0.1';
 const iverilog = process.env.IVERILOG_BIN || 'iverilog';
 const vvp = process.env.VVP_BIN || 'vvp';
 
@@ -37,16 +38,18 @@ function waveform(options) {
     const j = Math.floor(rand() * (i + 1));
     [types[i], types[j]] = [types[j], types[i]];
   }
-  const raw = Array(9).fill(0);
+  // The stimulus is deliberately independent of the filter control. A judge
+  // can rerun the same seed with a different filter and compare chip decisions.
+  const raw = Array(12).fill(0);
   for (const kind of types) {
     raw.push(...Array(3 + Math.floor(rand() * 4)).fill(0));
     const width = kind === 'event'
-      ? options.filter + 3 + Math.floor(rand() * 3)
-      : Math.max(1, Math.floor(options.filter / 2));
+      ? 5 + Math.floor(rand() * 6)
+      : 1 + Math.floor(rand() * 2);
     raw.push(...Array(width).fill(1));
-    raw.push(...Array(options.filter + 5).fill(0));
+    raw.push(...Array(13).fill(0));
   }
-  raw.push(...Array(options.filter + 10).fill(0));
+  raw.push(...Array(16).fill(0));
   const boundary = raw.length;
   raw.push(0, 0, 0);
   return { raw, boundary, pattern: types };
@@ -149,6 +152,12 @@ const files = {
   '/': ['index.html', 'text/html; charset=utf-8'],
   '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
   '/style.css': ['style.css', 'text/css; charset=utf-8'],
+  '/chip': ['chip.html', 'text/html; charset=utf-8'],
+  '/chip.html': ['chip.html', 'text/html; charset=utf-8'],
+  '/chip.css': ['chip.css', 'text/css; charset=utf-8'],
+  '/chip.js': ['chip.js', 'text/javascript; charset=utf-8'],
+  '/layout-v1.json': ['layout-v1.json', 'application/json; charset=utf-8'],
+  '/function-blocks.json': ['function-blocks.json', 'application/json; charset=utf-8'],
 };
 
 http.createServer(async (req, res) => {
@@ -157,6 +166,11 @@ http.createServer(async (req, res) => {
       const [name, type] = files[req.url];
       res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store' });
       fs.createReadStream(path.join(web, name)).pipe(res);
+      return;
+    }
+    if (req.method === 'GET' && req.url === '/layout/gds-render.png') {
+      res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' });
+      fs.createReadStream(path.join(root, 'evidence', 'layout', 'gds_render.png')).pipe(res);
       return;
     }
     if (req.method === 'POST' && req.url === '/api/run') {
@@ -175,6 +189,6 @@ http.createServer(async (req, res) => {
     res.writeHead(500, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: error.message }));
   }
-}).listen(port, '127.0.0.1', () => {
-  console.log(`PulseTrust demo: http://127.0.0.1:${port}`);
+}).listen(port, host, () => {
+  console.log(`PulseTrust demo: http://${host}:${port}`);
 });
